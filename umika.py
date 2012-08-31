@@ -106,9 +106,9 @@ class Umika(wx.Frame):
     self.DisplaySelectedItems('flist')
 
   def DisplaySelectedItems(self, fname):
-    print fname
+    print fname,
     c = self.flist.GetSelectedCount()
-    print c
+    print c,
     # print self.flist.GetSelection() # -1: wx.NOT_FOUND
     lst = []
     s, ck = self.flist.GetFirstSelected()
