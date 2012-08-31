@@ -24,19 +24,25 @@ class FileListBox(wx.VListBox):
     return self.bh + 4
 
   def OnDrawBackground(self, dc, rect, idx):
-    dc.SetBackground(wx.Brush(TRANSPARENT_COLOR))
-    dc.SetBrush(wx.Brush(wx.RED if self.IsSelected(idx) else TRANSPARENT_COLOR))
-    dc.SetPen(wx.Pen(TRANSPARENT_COLOR))
+    # super(FileListBox, self).OnDrawBackground(dc, rect, idx)
+    # self.GetSelectionBackground()
+    col = wx.CYAN if self.IsSelected(idx) else TRANSPARENT_COLOR
+    dc.SetBackground(wx.Brush(col))
+    dc.SetBrush(wx.Brush(col))
+    dc.SetPen(wx.Pen(col))
     dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height)
 
   def OnDrawSeparator(self, dc, rect, idx):
+    # super(FileListBox, self).OnDrawSeparator(dc, rect, idx)
     oldpen = dc.GetPen()
     dc.SetPen(wx.Pen(wx.BLACK))
-    dc.DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y)
+    btm = rect.y + rect.height - 1
+    dc.DrawLine(rect.x, btm, rect.x + rect.width, btm)
     rect.Deflate(0, 2)
     dc.SetPen(oldpen)
 
   def OnDrawItem(self, dc, rect, idx):
+    # super(FileListBox, self).OnDrawItem(dc, rect, idx)
     dc.DrawBitmap(self.bmp, rect.x + 2, rect.y + (rect.height - self.bh) / 2)
     txtx = rect.x + 2 + self.bh + 2
     lblrect = wx.Rect(txtx, rect.y, rect.width - txtx, rect.height)
@@ -45,15 +51,11 @@ class FileListBox(wx.VListBox):
       wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
 
   def RefreshFiles(self):
-    self.files = []
-    if self.dir:
+    if self.dir is None: self.files = []
+    else:
       self.files = [f for f in os.listdir(self.dir) if not os.path.isdir(f)]
     self.SetItemCount(len(self.files))
-    if len(self.files):
-      # self.SetSelection(0)
-      self.Select(0, True)
-      self.Select(1, True)
-      self.Select(3, True)
+    if(len(self.files)): self.Select(0, True) # self.SetSelection(0)
 
   def SetDir(self, dir):
     self.dir = dir
@@ -67,13 +69,13 @@ class Umika(wx.Frame):
     pnl = wx.Panel(self)
     if pnl:
       szp = wx.BoxSizer(wx.VERTICAL)
-      self.lblfile = wx.StaticText(self, wx.NewId(), 'select a file')
+      self.lblfile = wx.StaticText(pnl, wx.NewId(), 'select a file')
       szp.Add(self.lblfile, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-      self.flist = FileListBox(self, wx.NewId(),
-        style=wx.LB_MULTIPLE|wx.LB_EXTENDED)
+      self.flist = FileListBox(pnl, wx.NewId(),
+        style=wx.LB_MULTIPLE|wx.LB_EXTENDED|wx.LB_HSCROLL|wx.LB_NEEDED_SB)
       self.flist.SetDir(os.path.abspath('.'))
       szp.Add(self.flist, 1, wx.EXPAND)
-      line = wx.StaticLine(self, -1, size=(20, -1), style=wx.LI_HORIZONTAL)
+      line = wx.StaticLine(pnl, -1, size=(20, -1), style=wx.LI_HORIZONTAL)
       szp.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
       szbtn = wx.StdDialogButtonSizer()
       if szbtn:
@@ -98,19 +100,25 @@ class Umika(wx.Frame):
     self.Close()
 
   def OnBtnApply(self, ev):
-    print 'apply'
-    print self.flist.GetSelectedCount()
-    # print self.flist.GetSelection()
-    print self.flist.GetFirstSelected()
+    self.DisplaySelectedItems('apply')
 
   def OnFlistSelect(self, ev):
-    print 'flist'
-    print self.flist.GetSelectedCount()
-    # print self.flist.GetSelection()
-    print self.flist.GetFirstSelected()
+    self.DisplaySelectedItems('flist')
+
+  def DisplaySelectedItems(self, fname):
+    print fname
+    c = self.flist.GetSelectedCount()
+    print c
+    # print self.flist.GetSelection() # -1: wx.NOT_FOUND
+    lst = []
+    s, ck = self.flist.GetFirstSelected()
+    while s != wx.NOT_FOUND:
+      lst.append(s)
+      s, ck = self.flist.GetNextSelected(ck)
+    print lst
 
 if __name__ == '__main__':
-  app = wx.App(False)
+  app = wx.App(False) # wx.InitAllImageHandlers()
   frm = Umika(parent=None, id=wx.NewId())
   app.SetTopWindow(frm)
   frm.Show()
