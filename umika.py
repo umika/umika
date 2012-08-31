@@ -23,6 +23,12 @@ class FileListBox(wx.VListBox):
     # return super(FileListBox, self).OnMeasureItem(idx)
     return self.bh + 4
 
+  def OnDrawBackground(self, dc, rect, idx):
+    dc.SetBackground(wx.Brush(TRANSPARENT_COLOR))
+    dc.SetBrush(wx.Brush(wx.RED if self.IsSelected(idx) else TRANSPARENT_COLOR))
+    dc.SetPen(wx.Pen(TRANSPARENT_COLOR))
+    dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height)
+
   def OnDrawSeparator(self, dc, rect, idx):
     oldpen = dc.GetPen()
     dc.SetPen(wx.Pen(wx.BLACK))
@@ -31,10 +37,6 @@ class FileListBox(wx.VListBox):
     dc.SetPen(oldpen)
 
   def OnDrawItem(self, dc, rect, idx):
-    dc.SetBackground(wx.Brush(TRANSPARENT_COLOR))
-    dc.SetBrush(wx.Brush(TRANSPARENT_COLOR))
-    dc.SetPen(wx.Pen(TRANSPARENT_COLOR))
-    dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height)
     dc.DrawBitmap(self.bmp, rect.x + 2, rect.y + (rect.height - self.bh) / 2)
     txtx = rect.x + 2 + self.bh + 2
     lblrect = wx.Rect(txtx, rect.y, rect.width - txtx, rect.height)
@@ -43,9 +45,15 @@ class FileListBox(wx.VListBox):
       wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
 
   def RefreshFiles(self):
+    self.files = []
     if self.dir:
       self.files = [f for f in os.listdir(self.dir) if not os.path.isdir(f)]
     self.SetItemCount(len(self.files))
+    if len(self.files):
+      # self.SetSelection(0)
+      self.Select(0, True)
+      self.Select(1, True)
+      self.Select(3, True)
 
   def SetDir(self, dir):
     self.dir = dir
@@ -61,7 +69,8 @@ class Umika(wx.Frame):
       szp = wx.BoxSizer(wx.VERTICAL)
       self.lblfile = wx.StaticText(self, wx.NewId(), 'select a file')
       szp.Add(self.lblfile, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-      self.flist = FileListBox(self, wx.NewId(), style=wx.LC_VIRTUAL)
+      self.flist = FileListBox(self, wx.NewId(),
+        style=wx.LB_MULTIPLE|wx.LB_EXTENDED)
       self.flist.SetDir(os.path.abspath('.'))
       szp.Add(self.flist, 1, wx.EXPAND)
       line = wx.StaticLine(self, -1, size=(20, -1), style=wx.LI_HORIZONTAL)
@@ -86,13 +95,19 @@ class Umika(wx.Frame):
     self.Bind(wx.EVT_BUTTON, self.OnBtnApply, btnapply)
 
   def OnBtnClose(self, ev):
-    print 'close'
+    self.Close()
 
   def OnBtnApply(self, ev):
     print 'apply'
+    print self.flist.GetSelectedCount()
+    # print self.flist.GetSelection()
+    print self.flist.GetFirstSelected()
 
   def OnFlistSelect(self, ev):
     print 'flist'
+    print self.flist.GetSelectedCount()
+    # print self.flist.GetSelection()
+    print self.flist.GetFirstSelected()
 
 if __name__ == '__main__':
   app = wx.App(False)
