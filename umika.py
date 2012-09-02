@@ -6,6 +6,7 @@
 import sys, os, stat
 import time
 import wx
+import wx.calendar
 
 APP_TITLE = u'umika'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -81,7 +82,7 @@ class Umika(wx.Frame):
     pnl = wx.Panel(self)
     if pnl:
       szp = wx.BoxSizer(wx.VERTICAL)
-      self.lblfile = wx.StaticText(pnl, wx.NewId(), 'select a file')
+      self.lblfile = wx.StaticText(pnl, wx.NewId(), 'please select files')
       szp.Add(self.lblfile, 0, wx.ALIGN_LEFT|wx.ALL, 5)
       self.flist = FileListBox(pnl, wx.NewId(),
         style=wx.LB_MULTIPLE|wx.LB_EXTENDED|wx.LB_HSCROLL|wx.LB_NEEDED_SB)
@@ -89,6 +90,15 @@ class Umika(wx.Frame):
       szp.Add(self.flist, 1, wx.EXPAND)
       line = wx.StaticLine(pnl, -1, size=(20, -1), style=wx.LI_HORIZONTAL)
       szp.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+      pnlh0 = wx.Panel(pnl)
+      if pnlh0:
+        szh = wx.BoxSizer(wx.HORIZONTAL)
+        self.cal = wx.calendar.CalendarCtrl(pnlh0, wx.NewId(),
+          wx.DateTime_Now(), pos=(0, 0),
+          style=wx.calendar.CAL_SHOW_HOLIDAYS | wx.calendar.CAL_SUNDAY_FIRST \
+            | wx.calendar.CAL_SHOW_SURROUNDING_WEEKS)
+        szh.Add(self.cal, 0, wx.EXPAND)
+      szp.Add(pnlh0, 0, wx.EXPAND)
       szbtn = wx.StdDialogButtonSizer()
       if szbtn:
         sztopbtns = wx.BoxSizer(wx.HORIZONTAL)
