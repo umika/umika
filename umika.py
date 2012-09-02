@@ -4,6 +4,7 @@
 '''
 
 import sys, os, stat
+import time
 import wx
 
 APP_TITLE = u'umika'
@@ -45,10 +46,21 @@ class FileListBox(wx.VListBox):
     # super(FileListBox, self).OnDrawItem(dc, rect, idx)
     dc.DrawBitmap(self.bmp, rect.x + 2, rect.y + (rect.height - self.bh) / 2)
     txtx = rect.x + 2 + self.bh + 2
-    lblrect = wx.Rect(txtx, rect.y, rect.width - txtx, rect.height)
+    wsz, wts = 200, 200
+    lblrect = wx.Rect(txtx, rect.y, rect.width - txtx - wsz - wts, rect.height)
     dc.SetPen(wx.Pen(wx.BLACK))
     dc.DrawLabel(self.files[idx], lblrect,
       wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
+    if self.dir:
+      st = os.stat(os.path.join(self.dir, self.files[idx]))
+      ts = time.strftime('%Y-%m-%d %H:%M:%S',
+        time.localtime(st[stat.ST_MTIME]))
+      lblrect = wx.Rect(rect.width - wsz - wts, rect.y, wsz, rect.height)
+      dc.DrawLabel(str(st[stat.ST_SIZE]), lblrect,
+        wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+      lblrect = wx.Rect(rect.width - wts, rect.y, wts, rect.height)
+      dc.DrawLabel(' %s' % ts, lblrect,
+        wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
 
   def RefreshFiles(self):
     if self.dir is None: self.files = []
