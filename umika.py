@@ -163,13 +163,17 @@ class Umika(wx.Frame):
   def FmtTM(self, tm):
     return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tm))
 
-  def OnCalDClick(self, ev):
+  def SetTSLabel(self):
     tm = self.GetCalDateTime()
+    self.lblts.SetLabel(u'time stamp will be set to %s' % self.FmtTM(tm))
+    return tm
+
+  def OnCalDClick(self, ev):
+    tm = self.SetTSLabel()
     print u'CalDClick %s' % self.FmtTM(tm)
 
   def OnCalChange(self, ev):
-    tm = self.GetCalDateTime()
-    self.lblts.SetLabel(u'time stamp will be set to %s' % self.FmtTM(tm))
+    tm = self.SetTSLabel()
 
   def OnBtnToday(self, ev):
     wxdt = wx.DateTime()
@@ -184,7 +188,7 @@ class Umika(wx.Frame):
     self.Close()
 
   def OnBtnApply(self, ev):
-    tm = self.GetCalDateTime()
+    tm = self.SetTSLabel()
     self.DisplaySelectedItems('apply [%s]' % self.FmtTM(tm))
     if self.flist.GetSelectedCount() == 0: return
     d = wx.MessageDialog(self, self.lblts.GetLabel(), APP_TITLE,
