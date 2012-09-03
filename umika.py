@@ -123,6 +123,12 @@ class Umika(wx.Frame):
 
   def OnBtnApply(self, ev):
     self.DisplaySelectedItems('apply')
+    lst = []
+    s, ck = self.flist.GetFirstSelected()
+    while s != wx.NOT_FOUND:
+      lst.append(os.path.join(self.flist.dir, self.flist.files[s]))
+      s, ck = self.flist.GetNextSelected(ck)
+    print lst
 
   def OnFlistSelect(self, ev):
     self.DisplaySelectedItems('flist')
