@@ -68,7 +68,9 @@ class FileListBox(wx.VListBox):
     else:
       self.files = [f for f in os.listdir(self.dir) if not os.path.isdir(f)]
     self.SetItemCount(len(self.files))
-    if(len(self.files)): self.Select(0, True) # self.SetSelection(0)
+    # if(len(self.files)): self.Select(0, True) # self.SetSelection(0)
+    for i in xrange(len(self.files)): self.Select(i, False)
+    self.Refresh()
 
   def SetDir(self, dir):
     self.dir = dir
@@ -184,12 +186,27 @@ class Umika(wx.Frame):
   def OnBtnApply(self, ev):
     tm = self.GetCalDateTime()
     self.DisplaySelectedItems('apply [%s]' % self.FmtTM(tm))
-    lst = []
+    if self.flist.GetSelectedCount() == 0: return
+    d = wx.MessageDialog(self, self.lblts.GetLabel(), APP_TITLE,
+      wx.OK|wx.CANCEL|wx.ICON_INFORMATION)
+    r = d.ShowModal()
+    d.Destroy()
+    if r != wx.ID_OK: return
     s, ck = self.flist.GetFirstSelected()
     while s != wx.NOT_FOUND:
-      lst.append(os.path.join(self.flist.dir, self.flist.files[s]))
+      file = os.path.join(self.flist.dir, self.flist.files[s])
+      sttm = os.stat(file)[stat.ST_MTIME]
+      msg = u'%s\nfrom: %s\nto: %s' % (file, self.FmtTM(sttm), self.FmtTM(tm))
+      d = wx.MessageDialog(self, msg, APP_TITLE,
+        wx.YES|wx.NO|wx.CANCEL|wx.ICON_QUESTION)
+      r = d.ShowModal()
+      d.Destroy()
+      if r == wx.ID_CANCEL: break
+      if r == wx.ID_YES:
+        print msg
+        os.utime(file, (tm, tm))
       s, ck = self.flist.GetNextSelected(ck)
-    print lst
+    self.flist.RefreshFiles()
 
   def OnFlistSelect(self, ev):
     self.DisplaySelectedItems('flist')
