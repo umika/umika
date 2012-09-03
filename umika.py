@@ -64,12 +64,15 @@ class FileListBox(wx.VListBox):
         wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
 
   def RefreshFiles(self):
+    self.DeselectAll()
+    self.Clear()
     if self.dir is None: self.files = []
     else:
-      self.files = [f for f in os.listdir(self.dir) if not os.path.isdir(f)]
+      self.files = [f for f in os.listdir(self.dir) \
+        if not os.path.isdir(os.path.join(self.dir, f))]
     self.SetItemCount(len(self.files))
     # if(len(self.files)): self.Select(0, True) # self.SetSelection(0)
-    for i in xrange(len(self.files)): self.Select(i, False)
+    # for i in xrange(len(self.files)): self.Select(i, False)
     self.Refresh()
 
   def SetDir(self, dir):
@@ -84,17 +87,19 @@ class Umika(wx.Frame):
     pnl = wx.Panel(self)
     if pnl:
       szp = wx.BoxSizer(wx.VERTICAL)
-      self.lblts = wx.StaticText(pnl, wx.NewId(), 'please select files')
-      szp.Add(self.lblts, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+      self.lbldir = wx.StaticText(pnl, wx.NewId(), u'please select files')
+      szp.Add(self.lbldir, 0, wx.ALIGN_LEFT|wx.ALL, 5)
       self.flist = FileListBox(pnl, wx.NewId(),
         style=wx.LB_MULTIPLE|wx.LB_EXTENDED|wx.LB_HSCROLL|wx.LB_NEEDED_SB)
-      self.flist.SetDir(os.path.abspath('.'))
       szp.Add(self.flist, 1, wx.EXPAND)
       line = wx.StaticLine(pnl, -1, size=(20, -1), style=wx.LI_HORIZONTAL)
       szp.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
       pnlh0 = wx.Panel(pnl)
       if pnlh0:
         szh = wx.BoxSizer(wx.HORIZONTAL)
+        self.tre = wx.GenericDirCtrl(pnlh0, wx.NewId(), size=(160, 120),
+          style=wx.DIRCTRL_DIR_ONLY)
+        szh.Add(self.tre, 0, wx.EXPAND)
         self.cal = wx.calendar.CalendarCtrl(pnlh0, wx.NewId(),
           wx.DateTime_Now(), pos=(0, 0),
           style=wx.calendar.CAL_SHOW_HOLIDAYS | wx.calendar.CAL_SUNDAY_FIRST \
@@ -102,9 +107,9 @@ class Umika(wx.Frame):
         szh.Add(self.cal, 0, wx.EXPAND)
         pnlh01 = wx.Panel(pnlh0)
         if pnlh01:
-          szh01g = wx.GridBagSizer(3, 3)
+          szh01g = wx.GridBagSizer(5, 5)
           btntoday = wx.Button(pnlh01, wx.NewId(), u'reset calendar to today')
-          szh01g.Add(btntoday, (0, 0), (1, 2))
+          szh01g.Add(btntoday, (0, 0), (1, 3))
           sthour = wx.StaticText(pnlh01, -1, u'hour')
           szh01g.Add(sthour, (1, 0))
           self.hour = wx.TextCtrl(pnlh01, wx.NewId(), u'0')
@@ -117,6 +122,8 @@ class Umika(wx.Frame):
           szh01g.Add(stsecond, (3, 0))
           self.second = wx.TextCtrl(pnlh01, wx.NewId(), u'0')
           szh01g.Add(self.second, (3, 1))
+          self.lblts = wx.StaticText(pnlh01, wx.NewId(), 'please select files')
+          szh01g.Add(self.lblts, (4, 0), (1, 3))
           pnlh01.SetSizer(szh01g)
         szh.Add(pnlh01, 1, wx.EXPAND)
         pnlh0.SetSizer(szh)
@@ -136,12 +143,16 @@ class Umika(wx.Frame):
       # szp.Fit(pnl)
       szv.Add(pnl, 1, wx.EXPAND)
     self.SetSizer(szv)
+    tree = self.tre.GetTreeCtrl()
+    # self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnDirSelect, tree)
+    self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnDirSelect, tree)
     self.Bind(wx.EVT_LISTBOX, self.OnFlistSelect, self.flist)
     self.Bind(wx.calendar.EVT_CALENDAR, self.OnCalDClick, self.cal)
     self.Bind(wx.calendar.EVT_CALENDAR_SEL_CHANGED, self.OnCalChange, self.cal)
     self.Bind(wx.EVT_BUTTON, self.OnBtnToday, btntoday)
     self.Bind(wx.EVT_BUTTON, self.OnBtnClose, btnclose)
     self.Bind(wx.EVT_BUTTON, self.OnBtnApply, btnapply)
+    self.tre.SetPath(os.path.abspath('.'))
     wx.CallAfter(self.OnBtnToday, (None, ))
 
   def GetIntValue(self, tgt, min, max):
@@ -214,6 +225,11 @@ class Umika(wx.Frame):
 
   def OnFlistSelect(self, ev):
     self.DisplaySelectedItems('flist')
+
+  def OnDirSelect(self, ev):
+    d = self.tre.GetPath()
+    self.lbldir.SetLabel(d)
+    self.flist.SetDir(d)
 
   def DisplaySelectedItems(self, fname):
     print fname,
