@@ -82,8 +82,8 @@ class Umika(wx.Frame):
     pnl = wx.Panel(self)
     if pnl:
       szp = wx.BoxSizer(wx.VERTICAL)
-      self.lblfile = wx.StaticText(pnl, wx.NewId(), 'please select files')
-      szp.Add(self.lblfile, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+      self.lblts = wx.StaticText(pnl, wx.NewId(), 'please select files')
+      szp.Add(self.lblts, 0, wx.ALIGN_LEFT|wx.ALL, 5)
       self.flist = FileListBox(pnl, wx.NewId(),
         style=wx.LB_MULTIPLE|wx.LB_EXTENDED|wx.LB_HSCROLL|wx.LB_NEEDED_SB)
       self.flist.SetDir(os.path.abspath('.'))
@@ -98,6 +98,26 @@ class Umika(wx.Frame):
           style=wx.calendar.CAL_SHOW_HOLIDAYS | wx.calendar.CAL_SUNDAY_FIRST \
             | wx.calendar.CAL_SHOW_SURROUNDING_WEEKS)
         szh.Add(self.cal, 0, wx.EXPAND)
+        pnlh01 = wx.Panel(pnlh0)
+        if pnlh01:
+          szh01g = wx.GridBagSizer(3, 3)
+          btntoday = wx.Button(pnlh01, wx.NewId(), u'reset calendar to today')
+          szh01g.Add(btntoday, (0, 0), (1, 2))
+          sthour = wx.StaticText(pnlh01, -1, u'hour')
+          szh01g.Add(sthour, (1, 0))
+          self.hour = wx.TextCtrl(pnlh01, wx.NewId(), u'0')
+          szh01g.Add(self.hour, (1, 1))
+          stminute = wx.StaticText(pnlh01, -1, u'minute')
+          szh01g.Add(stminute, (2, 0))
+          self.minute = wx.TextCtrl(pnlh01, wx.NewId(), u'0')
+          szh01g.Add(self.minute, (2, 1))
+          stsecond = wx.StaticText(pnlh01, -1, u'second')
+          szh01g.Add(stsecond, (3, 0))
+          self.second = wx.TextCtrl(pnlh01, wx.NewId(), u'0')
+          szh01g.Add(self.second, (3, 1))
+          pnlh01.SetSizer(szh01g)
+        szh.Add(pnlh01, 1, wx.EXPAND)
+        pnlh0.SetSizer(szh)
       szp.Add(pnlh0, 0, wx.EXPAND)
       szbtn = wx.StdDialogButtonSizer()
       if szbtn:
@@ -109,20 +129,61 @@ class Umika(wx.Frame):
         btnapply.SetDefault()
         szbtn.AddButton(btnapply)
         szbtn.Realize()
-        szp.Add(szbtn, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+      szp.Add(szbtn, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
       pnl.SetSizer(szp)
       # szp.Fit(pnl)
       szv.Add(pnl, 1, wx.EXPAND)
     self.SetSizer(szv)
     self.Bind(wx.EVT_LISTBOX, self.OnFlistSelect, self.flist)
+    self.Bind(wx.calendar.EVT_CALENDAR, self.OnCalDClick, self.cal)
+    self.Bind(wx.calendar.EVT_CALENDAR_SEL_CHANGED, self.OnCalChange, self.cal)
+    self.Bind(wx.EVT_BUTTON, self.OnBtnToday, btntoday)
     self.Bind(wx.EVT_BUTTON, self.OnBtnClose, btnclose)
     self.Bind(wx.EVT_BUTTON, self.OnBtnApply, btnapply)
+    wx.CallAfter(self.OnBtnToday, (None, ))
+
+  def GetIntValue(self, tgt, min, max):
+    try:
+      v = int(tgt.GetValue())
+      if v < min: v = min
+      if v > max: v = max
+      return v
+    except ValueError, e:
+      return 0
+
+  def GetCalDateTime(self):
+    wxdt = self.cal.GetDate()
+    wxdt.SetHour(self.GetIntValue(self.hour, 0, 23))
+    wxdt.SetMinute(self.GetIntValue(self.minute, 0, 59))
+    wxdt.SetSecond(self.GetIntValue(self.second, 0, 59))
+    return wxdt.GetTicks()
+
+  def FmtTM(self, tm):
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tm))
+
+  def OnCalDClick(self, ev):
+    tm = self.GetCalDateTime()
+    print u'CalDClick %s' % self.FmtTM(tm)
+
+  def OnCalChange(self, ev):
+    tm = self.GetCalDateTime()
+    self.lblts.SetLabel(u'time stamp will be set to %s' % self.FmtTM(tm))
+
+  def OnBtnToday(self, ev):
+    wxdt = wx.DateTime()
+    wxdt.SetTimeT(time.time()) # must separate sentence to create instance
+    self.cal.SetDate(wxdt)
+    self.hour.SetValue(str(wxdt.GetHour()))
+    self.minute.SetValue(str(wxdt.GetMinute()))
+    self.second.SetValue(str(wxdt.GetSecond()))
+    wx.CallAfter(self.OnCalChange, (None, ))
 
   def OnBtnClose(self, ev):
     self.Close()
 
   def OnBtnApply(self, ev):
-    self.DisplaySelectedItems('apply')
+    tm = self.GetCalDateTime()
+    self.DisplaySelectedItems('apply [%s]' % self.FmtTM(tm))
     lst = []
     s, ck = self.flist.GetFirstSelected()
     while s != wx.NOT_FOUND:
